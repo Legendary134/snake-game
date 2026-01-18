@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>NEON SNAKE 2026</title>
+    <title>NEON SNAKE 2026 - EVOLUTION</title>
     <style>
         body {
             margin: 0;
@@ -31,23 +31,24 @@
     </style>
 </head>
 <body>
-    <div class="stats">System Status: <span id="score">0</span> pts</div>
+    <div class="stats">SCORE: <span id="score">0</span> | SPEED: <span id="speedLevel">1</span></div>
     <canvas id="gameCanvas" width="500" height="500"></canvas>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const scoreElement = document.getElementById("score");
+        const speedElement = document.getElementById("speedLevel");
 
         const box = 20;
         let score = 0;
-        let speed = 100;
         
-        // Cores Impactantes
-        const SNAKE_COLOR = "#0f0"; // Verde Neon
-        const SNAKE_GLOW = "#0f0";
-        const FOOD_COLOR = "#f0f";  // Magenta Elétrico
-        const FOOD_GLOW = "#f0f";
+        // VELOCIDADE INICIAL (Mais lento = número maior)
+        let currentSpeed = 150; 
+        let gameLoop;
+
+        const SNAKE_COLOR = "#0f0";
+        const FOOD_COLOR = "#f0f";
 
         let snake = [{x: 10 * box, y: 10 * box}];
         let food = {
@@ -73,35 +74,33 @@
             return false;
         }
 
+        // FUNÇÃO PARA REINICIAR O LOOP COM NOVA VELOCIDADE
+        function updateGameSpeed() {
+            clearInterval(gameLoop);
+            gameLoop = setInterval(draw, currentSpeed);
+            // Mostra o nível de velocidade (1 a 10 aprox)
+            speedElement.innerHTML = Math.floor(200 / currentSpeed);
+        }
+
         function draw() {
-            // Fundo com leve rastro (Motion Blur futurista)
             ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Grade de fundo (Grid Futurista)
-            ctx.strokeStyle = "#111";
-            for(let i=0; i<canvas.width; i+=box) {
-                ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke();
-            }
-
-            // Desenhar Cobra
+            // Cobra
             for(let i = 0; i < snake.length; i++) {
                 ctx.shadowBlur = 15;
-                ctx.shadowColor = SNAKE_GLOW;
-                ctx.fillStyle = (i == 0) ? "#fff" : SNAKE_COLOR; // Cabeça branca pra destacar
+                ctx.shadowColor = SNAKE_COLOR;
+                ctx.fillStyle = (i == 0) ? "#fff" : SNAKE_COLOR;
                 ctx.fillRect(snake[i].x, snake[i].y, box, box);
-                ctx.shadowBlur = 0;
             }
 
-            // Desenhar Comida (Maçã Neon)
+            // Comida
             ctx.shadowBlur = 20;
-            ctx.shadowColor = FOOD_GLOW;
+            ctx.shadowColor = FOOD_COLOR;
             ctx.fillStyle = FOOD_COLOR;
             ctx.beginPath();
             ctx.arc(food.x + box/2, food.y + box/2, box/2 - 2, 0, Math.PI * 2);
             ctx.fill();
-            ctx.shadowBlur = 0;
 
             let snakeX = snake[0].x;
             let snakeY = snake[0].y;
@@ -111,33 +110,9 @@
             if( d == "RIGHT") snakeX += box;
             if( d == "DOWN") snakeY += box;
 
-            // Se comer a comida
             if(snakeX == food.x && snakeY == food.y) {
                 score += 10;
                 scoreElement.innerHTML = score;
-                food = {
-                    x: Math.floor(Math.random() * 24 + 1) * box,
-                    y: Math.floor(Math.random() * 24 + 1) * box
-                };
-            } else {
-                snake.pop();
-            }
-
-            let newHead = { x: snakeX, y: snakeY };
-
-            // Game Over
-            if(snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
-                clearInterval(game);
-                ctx.fillStyle = "#fff";
-                ctx.font = "40px Courier New";
-                ctx.fillText("CRITICAL ERROR", 80, canvas.height/2);
-                setTimeout(() => location.reload(), 2000);
-            }
-
-            snake.unshift(newHead);
-        }
-
-        let game = setInterval(draw, speed);
-    </script>
-</body>
-</html>
+                
+                // AUMENTA A VELOCIDADE: Diminui o intervalo em 5ms a cada fruta
+                if (currentSpeed > 50) {
